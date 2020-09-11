@@ -26,6 +26,7 @@ type LoginOptions struct {
 
 	Hostname string
 	Token    string
+	Web      string
 }
 
 func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Command {
@@ -59,6 +60,9 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if tokenStdin {
+				if cmd.Flags().Changed("web") {
+					return &cmdutil.FlagError{Err: errors.New("specify only one of --web or --with-token")}
+				}
 				defer opts.IO.In.Close()
 				token, err := ioutil.ReadAll(opts.IO.In)
 				if err != nil {
@@ -66,6 +70,15 @@ func NewCmdLogin(f *cmdutil.Factory, runF func(*LoginOptions) error) *cobra.Comm
 				}
 				opts.Token = strings.TrimSpace(string(token))
 			}
+
+			// TODO fix the error handling here
+			// if !canPrompt
+			//   need either with-token or web
+			//   if hostname blank, use default
+			// if web and hostname specified, skip all prompts
+			// if canPrompt and only web, prompt for hostname
+			//
+			// consider an interactive opts member
 
 			if opts.Token != "" {
 				// Assume non-interactive if a token is specified
